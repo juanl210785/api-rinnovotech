@@ -44,6 +44,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // Órdenes del cliente autenticado
+    Route::get('/orders', [\App\Http\Controllers\Api\OrderController::class, 'index']);
+    Route::post('/orders', [\App\Http\Controllers\Api\OrderController::class, 'store']);
+    Route::get('/orders/{order}', [\App\Http\Controllers\Api\OrderController::class, 'show']);
+
     /*
     |--------------------------------------------------------------------------
     | Rutas Exclusivas de Administradores
