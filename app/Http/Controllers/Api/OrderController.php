@@ -148,4 +148,109 @@ class OrderController extends Controller
             ],
         ], 201);
     }
+
+    /**
+     * Confirmar y conciliar el Pago Móvil con las notificaciones recibidas en bank_payments.
+     */
+    public function confirmPayment(Request $request, Order $order): JsonResponse
+    {
+        // 1. Autorización: sólo el dueño de la orden o un admin puede pagarla
+        if ($order->user_id !== $request->user()->id && ! $request->user()->isAdmin()) {
+            abort(403, 'No tienes autorización para pagar esta orden.');
+        }
+
+        // 2. Validación de entrada
+        $request->validate([
+            'reference' => ['required', 'string', 'min:4', 'max:50'],
+        ], [
+            'reference.required' => 'Debes ingresar el número de referencia del Pago Móvil.',
+            'reference.min'      => 'Debes ingresar al menos los últimos 4 dígitos de la referencia.',
+        ]);
+
+        $referenceInput = trim($request->reference);
+
+        // 3. Verificar estado de la orden
+        if ($order->status === '2') {
+            return response()->json([
+                'success' => true,
+                'message' => 'Esta orden ya se encuentra pagada.',
+                'order'   => new OrderResource($order),
+            ], 200);
+        }
+
+        if ($order->status !== '1') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Esta orden no está pendiente de pago o ya fue cancelada.',
+            ], 422);
+        }
+
+        // 4. Verificar si la orden ya expiró
+        if ($order->expires_at && now()->greaterThan($order->expires_at)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El tiempo de espera para esta orden (20 minutos) ha expirado. Por favor genera una nueva orden.',
+            ], 422);
+        }
+
+        // 5. Conciliación atómica en Base de Datos
+        $expectedBs = (float) $order->total_bs;
+        $tolerance = 0.10; // Margen de céntimos ± 0.10 Bs
+        $minAmount = round($expectedBs - $tolerance, 2);
+        $maxAmount = round($expectedBs + $tolerance, 2);
+
+        $payment = DB::transaction(function () use ($order, $referenceInput, $minAmount, $maxAmount) {
+            // Buscar un pago no reclamado que coincida con la referencia y el monto esperado
+            $matchedPayment = \App\Models\BankPayment::where('status', 'unclaimed')
+                ->where(function ($query) use ($referenceInput) {
+                    $query->where('reference', $referenceInput)
+                          ->orWhere('reference', 'like', "%{$referenceInput}");
+                })
+                ->whereBetween('amount', [$minAmount, $maxAmount])
+                ->lockForUpdate()
+                ->first();
+
+            if (! $matchedPayment) {
+                return null;
+            }
+
+            // Marcar el pago como consumido
+            $matchedPayment->update([
+                'status'   => 'claimed',
+                'order_id' => $order->id,
+            ]);
+
+            // Actualizar la orden a 'Pagado / En Preparación' (status = 2)
+            $order->update([
+                'status'         => '2',
+                'payment_method' => 'Pago Móvil BDV (Conciliado Automático)',
+            ]);
+
+            return $matchedPayment;
+        });
+
+        // 6. Si el pago fue encontrado y conciliado
+        if ($payment) {
+            $order->load(['orderItems.product', 'orderItems.variant']);
+
+            return response()->json([
+                'success' => true,
+                'message' => '¡Pago verificado y aprobado con éxito! Tu orden ha sido confirmada.',
+                'payment' => [
+                    'bank'        => $payment->bank,
+                    'reference'   => $payment->reference,
+                    'amount_bs'   => (float) $payment->amount,
+                    'sender_name' => $payment->sender_name,
+                ],
+                'order'   => new OrderResource($order),
+            ]);
+        }
+
+        // 7. Si no coincide aún (la notificación del banco todavía no llega o el monto/referencia no coinciden)
+        return response()->json([
+            'success' => false,
+            'message' => 'Aún no hemos detectado tu pago en nuestra cuenta. Si acabas de realizar la transferencia, espera 10 a 15 segundos y presiona "Verificar Pago" nuevamente.',
+            'tip'     => 'Asegúrate de haber transferido el monto exacto de Bs. ' . number_format($expectedBs, 2, ',', '.') . ' y haber colocado bien los dígitos de la referencia.',
+        ], 422);
+    }
 }
