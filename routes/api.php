@@ -1,16 +1,30 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\Admin\FamilyController as AdminFamilyController;
 use App\Http\Controllers\Api\Admin\OptionController as AdminOptionController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\Admin\SubcategoryController as AdminSubcategoryController;
 use App\Http\Controllers\Api\Admin\SubcategoryOptionController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\NavigationController;
+use App\Http\Controllers\Api\ProductCatalogController;
 use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Rutas Públicas de Autenticación
+| Rutas Públicas de la Tienda (Sin Autenticación)
 |--------------------------------------------------------------------------
 */
+// Navegación / Menú de la tienda
+Route::get('/families', [NavigationController::class, 'families']);
+Route::get('/categories', [NavigationController::class, 'categories']);
+
+// Catálogo de Productos para clientes
+Route::get('/products', [ProductCatalogController::class, 'index']);
+Route::get('/products/{product}', [ProductCatalogController::class, 'show']);
+
+// Autenticación
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -29,7 +43,12 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('admin')->prefix('admin')->group(function () {
-        // Gestión de Opciones (Atributos) y Features (Valores)
+        // Familias, Categorías y Subcategorías
+        Route::apiResource('families', AdminFamilyController::class);
+        Route::apiResource('categories', AdminCategoryController::class);
+        Route::apiResource('subcategories', AdminSubcategoryController::class);
+
+        // Opciones (Atributos) y Features (Valores)
         Route::apiResource('options', AdminOptionController::class);
         Route::post('options/{option}/features', [AdminOptionController::class, 'addFeature']);
         Route::delete('features/{feature}', [AdminOptionController::class, 'destroyFeature']);
@@ -38,7 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('subcategories/{subcategory}/options', [SubcategoryOptionController::class, 'index']);
         Route::post('subcategories/{subcategory}/options', [SubcategoryOptionController::class, 'syncOptions']);
 
-        // Gestión de Productos y Variantes
+        // Productos y Variantes
         Route::apiResource('products', AdminProductController::class);
     });
 });

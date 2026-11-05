@@ -20,8 +20,11 @@ class Order extends Model
         'envio_type',
         'shipping_cost',
         'total',
+        'bcv_rate',
+        'total_bs',
         'status',
         'payment_method',
+        'expires_at',
     ];
 
     protected function casts(): array
@@ -29,6 +32,9 @@ class Order extends Model
         return [
             'shipping_cost' => 'decimal:2',
             'total'         => 'decimal:2',
+            'bcv_rate'      => 'decimal:4',
+            'total_bs'      => 'decimal:2',
+            'expires_at'    => 'datetime',
         ];
     }
 
@@ -40,5 +46,10 @@ class Order extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function bankPayments(): HasMany
+    {
+        return $this->hasMany(BankPayment::class);
     }
 }
