@@ -20,6 +20,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/families', [NavigationController::class, 'families']);
 Route::get('/categories', [NavigationController::class, 'categories']);
 
+// Tasa Oficial BCV del día (para banners, carrito y conversiones públicas)
+Route::get('/bcv-rate', [\App\Http\Controllers\Api\BcvController::class, 'show']);
+
+// Webhook receptor de notificaciones bancarias (NotifyHook Android)
+Route::post('/webhooks/bdv', [\App\Http\Controllers\Api\BankWebhookController::class, 'handleBdv'])
+    ->middleware('verify.bdv.webhook');
+
 // Catálogo de Productos para clientes
 Route::get('/products', [ProductCatalogController::class, 'index']);
 Route::get('/products/{product}', [ProductCatalogController::class, 'show']);

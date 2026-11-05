@@ -13,7 +13,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'admin'              => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'verify.bdv.webhook' => \App\Http\Middleware\VerifyBdvWebhookSecret::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
