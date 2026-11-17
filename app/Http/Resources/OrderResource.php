@@ -37,6 +37,24 @@ class OrderResource extends JsonResource
             'expires_at'       => $this->expires_at?->toIso8601String(),
             'is_expired'       => $this->expires_at ? now()->greaterThan($this->expires_at) : false,
             'items'            => OrderItemResource::collection($this->whenLoaded('orderItems')),
+            'user'             => $this->whenLoaded('user', function () {
+                return [
+                    'id'    => $this->user?->id,
+                    'name'  => $this->user?->name,
+                    'email' => $this->user?->email,
+                ];
+            }),
+            'payments'         => $this->whenLoaded('bankPayments', function () {
+                return $this->bankPayments->map(fn ($p) => [
+                    'id'           => $p->id,
+                    'bank'         => $p->bank,
+                    'sender_name'  => $p->sender_name,
+                    'reference'    => $p->reference,
+                    'amount'       => (float) $p->amount,
+                    'status'       => $p->status,
+                    'payment_date' => $p->payment_date?->toIso8601String(),
+                ]);
+            }),
             'created_at'       => $this->created_at?->toIso8601String(),
         ];
     }

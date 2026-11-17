@@ -15,6 +15,9 @@ class ProductCatalogController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
+        // Auto-limpieza en segundo plano de cualquier orden expirada para asegurar stock en tiempo real
+        \Illuminate\Support\Facades\Artisan::call('orders:cancel-expired');
+
         $products = Product::query()
             // Solo productos activos en la tienda pública
             ->where('status', 'Activo')

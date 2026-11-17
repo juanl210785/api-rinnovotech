@@ -21,6 +21,7 @@ class OrderItemResource extends JsonResource
             'quantity'    => (int) $this->quantity,
             'price'       => (float) $this->price,
             'subtotal'    => round(((float) $this->price) * ((int) $this->quantity), 2),
+            'variant'     => new VariantResource($this->whenLoaded('variant')),
         ];
     }
 }

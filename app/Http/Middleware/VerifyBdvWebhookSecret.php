@@ -15,9 +15,11 @@ class VerifyBdvWebhookSecret
     {
         $configuredSecret = config('services.bdv.webhook_secret', env('BDV_WEBHOOK_SECRET'));
 
-        // Si se configuró un secreto en el servidor, validar que coincida
+        // Si se configuró un secreto en el servidor, validar que coincida (por header, body o query)
         if (! empty($configuredSecret)) {
-            $incomingSecret = $request->header('X-Webhook-Secret');
+            $incomingSecret = $request->header('X-Webhook-Secret')
+                ?? $request->input('secret')
+                ?? $request->query('secret');
 
             if (! $incomingSecret || ! hash_equals((string) $configuredSecret, (string) $incomingSecret)) {
                 return response()->json([

@@ -43,7 +43,7 @@ class StoreProductRequest extends FormRequest
             'price'          => ['nullable', 'numeric', 'min:0'],
             'stock'          => ['nullable', 'integer', 'min:0'],
             'sku'            => ['nullable', 'string', 'max:255'],
-            'image'          => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
+            'image'          => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:20480'],
 
             // Datos de variantes si es producto configurable
             'variants'               => ['nullable', 'array'],
@@ -52,7 +52,7 @@ class StoreProductRequest extends FormRequest
             'variants.*.stock'       => ['nullable', 'integer', 'min:0'],
             'variants.*.features'    => ['nullable', 'array'],
             'variants.*.features.*'  => ['integer', 'exists:features,id'],
-            'variants.*.image'       => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
+            'variants.*.image'       => ['nullable', 'file', 'image', 'mimes:jpeg,png,jpg,webp', 'max:20480'],
         ];
     }
 }

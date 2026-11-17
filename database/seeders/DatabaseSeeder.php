@@ -15,11 +15,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Usuario Admin por defecto si no existe
+        User::firstOrCreate(
+            ['email' => 'admin@rinnovotech.com'],
+            [
+                'name'     => 'Administrador RinnovoTech',
+                'password' => 'admin1234',
+                'role'     => 'admin',
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        User::factory(10)->create();
+
+        // Estructura de Catálogo (Familias -> Categorías -> Subcategorías)
+        $this->call([
+            CatalogSeeder::class,
         ]);
     }
 }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Api\Admin\FamilyController as AdminFamilyController;
 use App\Http\Controllers\Api\Admin\OptionController as AdminOptionController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\Admin\SubcategoryController as AdminSubcategoryController;
 use App\Http\Controllers\Api\Admin\SubcategoryOptionController;
@@ -45,9 +46,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Órdenes del cliente autenticado
+    Route::get('/orders/active', [\App\Http\Controllers\Api\OrderController::class, 'active']);
     Route::get('/orders', [\App\Http\Controllers\Api\OrderController::class, 'index']);
     Route::post('/orders', [\App\Http\Controllers\Api\OrderController::class, 'store']);
     Route::get('/orders/{order}', [\App\Http\Controllers\Api\OrderController::class, 'show']);
+    Route::post('/orders/{order}/items', [\App\Http\Controllers\Api\OrderController::class, 'addItem']);
+    Route::delete('/orders/{order}/items/{item}', [\App\Http\Controllers\Api\OrderController::class, 'removeItem']);
+    Route::post('/orders/{order}/cancel', [\App\Http\Controllers\Api\OrderController::class, 'cancel']);
     Route::post('/orders/{order}/confirm-payment', [\App\Http\Controllers\Api\OrderController::class, 'confirmPayment']);
 
     /*
@@ -72,5 +77,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Productos y Variantes
         Route::apiResource('products', AdminProductController::class);
+
+        // Gestión y Conciliación de Órdenes
+        Route::get('orders/stats', [AdminOrderController::class, 'stats']);
+        Route::get('orders', [AdminOrderController::class, 'index']);
+        Route::get('orders/{order}', [AdminOrderController::class, 'show']);
+        Route::patch('orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
     });
 });
